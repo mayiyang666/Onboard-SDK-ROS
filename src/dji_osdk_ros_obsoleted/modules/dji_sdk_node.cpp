@@ -77,6 +77,15 @@ DJISDKNode::~DJISDKNode()
   {
     cleanUpSubscribeFromFC();
   }
+
+#ifdef ADVANCED_SENSING
+	if(latest_camera_ > 0)
+	{
+		vehicle->advancedSensing->unsubscribeVGAImages(latest_camera_);
+		ROS_INFO("Unsubscribed from the VGA Stream");
+	}
+#endif
+
   if (vehicle)
   {
     delete vehicle;
@@ -230,7 +239,7 @@ DJISDKNode::initPublisher(ros::NodeHandle& nh)
    * - Fused attitude (duplicated from attitude topic)
    * - Raw linear acceleration (body frame: FLU, m/s^2)
    *       Z value is +9.8 when placed on level ground statically
-   * - Raw angular velocity (body frame: FLU, rad/s^2)
+   * - Raw angular velocity (body frame: FLU, rad/s)
    */
   imu_publisher = nh.advertise<sensor_msgs::Imu>("dji_osdk_ros/imu", 10);
 
@@ -318,16 +327,26 @@ DJISDKNode::initPublisher(ros::NodeHandle& nh)
     nh.advertise<sensor_msgs::Image>("dji_osdk_ros/stereo_240p_front_depth_images", 10);
 
   stereo_vga_front_left_publisher =
-    nh.advertise<sensor_msgs::Image>("dji_osdk_ros/stereo_vga_front_left_images", 10);
+    nh.advertise<sensor_msgs::Image>("dji_osdk_ros/stereo_vga/left/image_raw", 10);
+    
+  left_camera_info_pub_ = 
+  	nh.advertise<sensor_msgs::CameraInfo>("/dji_osdk_ros/stereo_vga/left/camera_info",10);
 
   stereo_vga_front_right_publisher =
-    nh.advertise<sensor_msgs::Image>("dji_osdk_ros/stereo_vga_front_right_images", 10);
+    nh.advertise<sensor_msgs::Image>("dji_osdk_ros/stereo_vga/right/image_raw", 10);
+  
+  right_camera_info_pub_ = 
+  	nh.advertise<sensor_msgs::CameraInfo>("/dji_osdk_ros/stereo_vga/right/camera_info",10);
 
   main_camera_stream_publisher =
     nh.advertise<sensor_msgs::Image>("dji_osdk_ros/main_camera_images", 10);
 
   fpv_camera_stream_publisher =
     nh.advertise<sensor_msgs::Image>("dji_osdk_ros/fpv_camera_images", 10);
+    
+  
+  
+  
 #endif
 
 
