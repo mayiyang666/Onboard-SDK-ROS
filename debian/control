@@ -2,7 +2,7 @@ Source: ros-melodic-dji-osdk-ros
 Section: misc
 Priority: optional
 Maintainer: kevin.hoo <kevin.hoo@dji.com>
-Build-Depends: debhelper (>= 9.0.0), opencv, ros-melodic-actionlib, ros-melodic-actionlib-msgs, ros-melodic-catkin, ros-melodic-geometry-msgs, ros-melodic-message-filters, ros-melodic-message-generation, ros-melodic-nav-msgs, ros-melodic-nmea-msgs, ros-melodic-roscpp, ros-melodic-rospy, ros-melodic-std-msgs
+Build-Depends: debhelper (>= 9.0.0), ros-melodic-actionlib, ros-melodic-actionlib-msgs, ros-melodic-catkin, ros-melodic-geometry-msgs, ros-melodic-message-filters, ros-melodic-message-generation, ros-melodic-nav-msgs, ros-melodic-nmea-msgs, ros-melodic-roscpp, ros-melodic-rospy, ros-melodic-std-msgs
 Homepage: http://developer.dji.com/onboard-sdk/documentation/github-platform-docs/ROS/README.html
 Standards-Version: 3.9.2
 
