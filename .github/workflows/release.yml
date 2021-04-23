@@ -22,7 +22,7 @@ jobs:
           command: 'push'
           format: 'deb'
           owner: 'automodality'
-          repo: 'dev'
+          repo: 'release'
           distro: 'ubuntu'
           release: 'bionic'
           file: 'ros-melodic-dji-osdk-ros_4.0.100${{ github.run_number }}-0bionic_arm64.deb' # version must match package phase
