@@ -8,5 +8,5 @@ Standards-Version: 3.9.2
 
 Package: ros-melodic-dji-osdk-ros
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, opencv, ros-melodic-actionlib, ros-melodic-actionlib-msgs, ros-melodic-geometry-msgs, ros-melodic-message-filters, ros-melodic-message-runtime, ros-melodic-nav-msgs, ros-melodic-nmea-msgs, ros-melodic-roscpp, ros-melodic-rospy, ros-melodic-std-msgs
+Depends: ${shlibs:Depends}, ${misc:Depends}, ros-melodic-actionlib, ros-melodic-actionlib-msgs, ros-melodic-geometry-msgs, ros-melodic-message-filters, ros-melodic-message-runtime, ros-melodic-nav-msgs, ros-melodic-nmea-msgs, ros-melodic-roscpp, ros-melodic-rospy, ros-melodic-std-msgs
 Description: A ROS package using DJI Onboard SDK
