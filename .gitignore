@@ -16,3 +16,6 @@ catkin_ws
 
 debian/ros-*-dji-onboard-sdk-ros*
 debian/ros-*-dji-osdk-ros*
+debian/.debhelper/
+obj-aarch64-linux-gnu/
+*.*deb
