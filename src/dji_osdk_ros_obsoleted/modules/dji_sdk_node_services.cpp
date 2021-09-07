@@ -404,7 +404,7 @@ DJISDKNode::stereoVGASubscriptionCallback(dji_osdk_ros::StereoVGASubscription::R
 
   if (request.unsubscribe_vga == 1)
   {
-    vehicle->advancedSensing->unsubscribeVGAImages(request.front_vga);
+    vehicle->advancedSensing->unsubscribeVGAImages(latest_camera_);
     response.result = true;
     ROS_INFO("unsubscribe stereo vga images");
     latest_camera_ = -1;
