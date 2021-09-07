@@ -3,26 +3,105 @@ on:
   push:
     branches:
       - master
+env:
+  RELEASE_DIR: release
+  RELEASE_PROPERTIES_FILE: release/release.properties
+  RELEASE_PAYLOAD_FILE: release/payload.json
 jobs:
-  package-cuda:
+  release:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04]
+    steps:
+      - uses: AutoModality/action-clean@v1.1.0
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Semantic Release
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Write release result to file
+        run: mkdir ${{ env.RELEASE_DIR }}
+      - name: Write Published
+        uses: christian-draeger/write-properties@1.0.1
+        with:
+          path: ${{ env.RELEASE_PROPERTIES_FILE }}
+          property: 'published'
+          value: ${{ steps.semantic.outputs.new_release_published }}
+      - name: Write Version
+        uses: christian-draeger/write-properties@1.0.1
+        if: steps.semantic.outputs.new_release_published == 'true'
+        with:
+          path: ${{ env.RELEASE_PROPERTIES_FILE }}
+          property: 'version'
+          value: ${{ steps.semantic.outputs.new_release_version }}
+      - name: Write Release Payload
+        run: |
+            #retrieve package name from changelog guaranteed to be first characters ( split on space, choose first result)
+            package_name=$(head -1 debian/changelog | awk -F' ' '{print $1}')
+            echo "{\"package\":\"${package_name}\", \"new_release_version\": \"${{ steps.semantic.outputs.new_release_version }}\", \"new_release_major_version\": \"${{ steps.semantic.outputs.new_release_major_version }}\", \"new_release_minor_version\":\"${{ steps.semantic.outputs.new_release_minor_version }}\",\"new_release_patch_version\":\"${{ steps.semantic.outputs.new_release_patch_version }}\"}" > ${{ env.RELEASE_PAYLOAD_FILE }}
+      - name: Share release file with other jobs
+        uses: actions/upload-artifact@v1
+        with:
+          name: release
+          path: '${{ env.RELEASE_DIR }}'
+  release-package-arm:
+    needs: release
     runs-on: [arm64,self-hosted,linux, cuda]
     steps:
       - uses: AutoModality/action-clean@v1.1.0
       - uses: actions/checkout@v2
-      - uses: rlespinasse/github-slug-action@3.1.0 # for GITHUB_REF_SLUG
-      - name: Package
-        run: |
-          AM_PLATFORM=dji_m300 amros packages install -y --password=${{ secrets.BUILD_PASSWORD }}
-          echo ${{ secrets.BUILD_PASSWORD }} | sudo -S whoami && source /opt/ros/melodic/setup.bash && amros dev build deb --clean --version="4.0.100${{ github.run_number }}" 
+      - name: Download release
+        uses: actions/download-artifact@v1
+        with:
+          name: release
+          path: ${{ env.RELEASE_DIR }}
+      - name: Read Published
+        id: published
+        uses: christian-draeger/read-properties@1.0.1
+        with:
+          path: ${{ env.RELEASE_PROPERTIES_FILE }}
+          property: 'published'
+      - name: Read Version if published
+        id: version
+        if: steps.published.outputs.value == 'true'
+        uses: christian-draeger/read-properties@1.0.1
+        with:
+          path: ${{ env.RELEASE_PROPERTIES_FILE }}
+          property: 'version'
       - name: Deploy
         id: deploy
-        uses: AutoModality/action-cloudsmith@0.2.0
+        if: steps.published.outputs.value == 'true'
+        run: deploy-amros ${{ secrets.DEVELOPER_PASSWORD }} ${{ steps.version.outputs.value }} release ${{ secrets.CLOUDSMITH_API_KEY }}
+  notify-amros:
+    needs: 
+      - release-package-arm
+    runs-on: ubuntu-latest
+    name: Notify AMROS
+    steps:
+      - name: Download release
+        uses: actions/download-artifact@v1
         with:
-          api-key: ${{ secrets.CLOUDSMITH_API_KEY }}
-          command: 'push'
-          format: 'deb'
-          owner: 'automodality'
-          repo: 'release'
-          distro: 'ubuntu'
-          release: 'bionic'
-          file: 'ros-melodic-dji-osdk-ros_4.0.100${{ github.run_number }}_arm64.deb' # version must match package phase
+          name: release
+          path: ${{ env.RELEASE_DIR }}
+      - name: Read Published
+        id: published
+        uses: christian-draeger/read-properties@1.0.1
+        with:
+          path: ${{ env.RELEASE_PROPERTIES_FILE }}
+          property: 'published'
+      - name: Payload env
+        run: |
+            payload=$(cat ${{ env.RELEASE_PAYLOAD_FILE }} )
+            echo "RELEASE_PAYLOAD=$payload" >> $GITHUB_ENV
+      - name: Notify AMROS of Release
+        if: steps.published.outputs.value == 'true'
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.AMGITBOT_PAT }}
+          repository: AutoModality/amros
+          event-type: package-released
+          client-payload: "${{ env.RELEASE_PAYLOAD }}"
+      
